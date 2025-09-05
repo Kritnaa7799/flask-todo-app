@@ -37,8 +37,8 @@ jobs:
       - name: Deploy to K3s on EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
+          host: 44.208.21.230
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             export KUBECONFIG=/home/ubuntu/.kube/config
