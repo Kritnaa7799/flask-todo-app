@@ -52,6 +52,6 @@ jobs:
           script: |
             export KUBECONFIG=/home/ubuntu/.kube/config
             echo "Updating Deployment with new image..."
-            kubectl apply -f deployment.yaml
-            kubectl apply -f service.yaml
+            kubectl apply -f /home/ubuntu/deployment.yaml
+            kubectl apply -f /home/ubuntu/service.yaml
 
