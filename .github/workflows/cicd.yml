@@ -43,5 +43,6 @@ jobs:
           script: |
             export KUBECONFIG=/home/ubuntu/.kube/config
             echo "Updating Deployment with new image..."
-            kubectl set image deployment/flask-app flask=kishna/flask-todo-app:v3
+            kubectl apply -f deployment.yaml
+            kubectl apply -f service.yaml
 
