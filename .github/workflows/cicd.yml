@@ -33,6 +33,15 @@ jobs:
           docker push $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
 
+      - name: Copy Kubernetes manifests to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: 44.208.21.230
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "deployment.yaml,service.yaml"
+          target: "/home/ubuntu/"
+
       # 5️⃣ Deploy to your EC2 K3s cluster via SSH
       - name: Deploy to K3s on EC2
         uses: appleboy/ssh-action@v0.1.10
