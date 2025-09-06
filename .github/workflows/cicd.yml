@@ -33,15 +33,6 @@ jobs:
           docker push $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
 
-      - name: Copy Kubernetes manifests to EC2
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "deployment.yaml,service.yaml"
-          target: "/home/ubuntu/"
-
       # 5️⃣ Deploy to your EC2 K3s cluster via SSH
       - name: Deploy to K3s on EC2
         uses: appleboy/ssh-action@v0.1.10
@@ -52,6 +43,10 @@ jobs:
           script: |
             export KUBECONFIG=/home/ubuntu/.kube/config
             echo "Updating Deployment with new image..."
-            kubectl apply -f /home/ubuntu/deployment.yaml
-            kubectl apply -f /home/ubuntu/service.yaml
-
+            kubectl set image deployment/flask-app flask-app=$IMAGE:${{ github.sha }} --record
+            echo "Waiting for rollout to complete..."
+            kubectl rollout status deployment/flask-app --timeout=120s
+            echo "Pods status:"
+            kubectl get pods -o wide
+            echo "Service status:"
+            kubectl get svc flask-service -o wide
