@@ -18,4 +18,30 @@ spec:
         image: kishna/flask-app:latest
         ports:
         - containerPort: 5000
+        env:
+        - name: PGDB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: flask-config
+              key: PGDB_HOST
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: flask-config
+              key: REDIS_HOST
+        - name: PGDB_USER
+          valueFrom:
+            secretKeyRef:
+              name: flask-secret
+              key: PGDB_USER
+        - name: PGDB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: flask-secret
+              key: PGDB_PASSWORD
+        - name: PGDB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: flask-secret
+              key: PGDB_NAME
 
