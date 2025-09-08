@@ -1,52 +1,35 @@
-name: Flask App CI/CD
+name: CI/CD K3s
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
-  IMAGE: ${{ secrets.DOCKER_USERNAME }}/flask-todo-app
+  IMAGE: ${{ secrets.DOCKER_USERNAME }}/flask-app:${{ github.sha }}
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      # 1️⃣ Checkout your repo
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      # 2️⃣ Log in to Docker Hub
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-      # 3️⃣ Build Docker image with commit SHA and latest tags
-      - name: Build Docker image
-        run: |
-          docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
-
-      # 4️⃣ Push both tags to Docker Hub
-      - name: Push Docker image
-        run: |
-          docker push $IMAGE:${{ github.sha }}
-          docker push $IMAGE:latest
-
-      # 5️⃣ Deploy to your EC2 K3s cluster via SSH
-      - name: Deploy to K3s on EC2
-        uses: appleboy/ssh-action@v0.1.10
+      - uses: docker/login-action@v2
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            export KUBECONFIG=/home/ubuntu/.kube/config
-            echo "Updating Deployment with new image..."
-            kubectl set image deployment/flask-app flask-app=$IMAGE:${{ github.sha }} --record
-            echo "Waiting for rollout to complete..."
-            kubectl rollout status deployment/flask-app --timeout=120s
-            echo "Pods status:"
-            kubectl get pods -o wide
-            echo "Service status:"
-            kubectl get svc flask-service -o wide
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ env.IMAGE }}
+
+      - uses: azure/setup-kubectl@v4
+
+      - run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_FILE }}" > $HOME/.kube/config
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl set image deployment/flask-app flask-app=${{ env.IMAGE }}
