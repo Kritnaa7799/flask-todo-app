@@ -35,62 +35,62 @@ jobs:
           docker push $IMAGE:latest
 
       # 5️⃣ Copy Kubernetes manifests to EC2
-      - name: Copy K8s manifests
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: 3.89.36.101
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "*.yaml"
-          target: "/home/ubuntu/k8s-manifests"
+      # - name: Copy K8s manifests
+      # uses: appleboy/scp-action@v0.1.4
+      # with:
+      #   host: 3.89.36.101
+      #   username: ubuntu
+      #   key: ${{ secrets.EC2_SSH_KEY }}
+      #   source: "*.yaml"
+      #   target: "/home/ubuntu/k8s-manifests"
 
       # 6️⃣ Deploy services on EC2 via SSH
-      - name: Deploy to K3s on EC2
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: 3.89.36.101
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            export KUBECONFIG=/home/ubuntu/.kube/config
+      #  - name: Deploy to K3s on EC2
+      # uses: appleboy/ssh-action@v0.1.10
+      # with:
+      #   host: 3.89.36.101
+      #   username: ubuntu
+      #   key: ${{ secrets.EC2_SSH_KEY }}
+      #   script: |
+      #     export KUBECONFIG=/home/ubuntu/.kube/config
+      #
+      #     # Create namespaces
+      #     echo "Creating namespaces..."
+      #     kubectl create namespace app --dry-run=client -o yaml | kubectl apply -f -
+      #     kubectl create namespace db --dry-run=client -o yaml | kubectl apply -f -
+      #     kubectl create namespace redis --dry-run=client -o yaml | kubectl apply -f -
+      #
+      #     # Deploy Postgres
+      #     echo "Deploying Postgres..."
+      #     kubectl apply -f /home/ubuntu/k8s-manifests/postgres/ -n db
+      #
+      #     # Deploy Redis
+      #     echo "Deploying Redis..."
+      #     kubectl apply -f /home/ubuntu/k8s-manifests/redis/ -n redis
+      #
+      #     # Deploy Flask ConfigMap & Secrets
+      #     echo "Deploying Flask ConfigMap & Secrets..."
+      #     kubectl apply -f /home/ubuntu/k8s-manifests/flask/configmap.yaml -n app
+      #     kubectl apply -f /home/ubuntu/k8s-manifests/flask/secrets.yaml -n app
+      #
+      #     # Deploy Flask Deployment & Service
+      #     echo "Deploying Flask Deployment & Service..."
+      #     kubectl apply -f /home/ubuntu/k8s-manifests/flask/deployment.yaml -n app
+      #     kubectl apply -f /home/ubuntu/k8s-manifests/flask/service.yaml -n app
 
-            # Create namespaces
-            echo "Creating namespaces..."
-            kubectl create namespace app --dry-run=client -o yaml | kubectl apply -f -
-            kubectl create namespace db --dry-run=client -o yaml | kubectl apply -f -
-            kubectl create namespace redis --dry-run=client -o yaml | kubectl apply -f -
-
-            # Deploy Postgres
-            echo "Deploying Postgres..."
-            kubectl apply -f /home/ubuntu/k8s-manifests/postgres/ -n db
-
-            # Deploy Redis
-            echo "Deploying Redis..."
-            kubectl apply -f /home/ubuntu/k8s-manifests/redis/ -n redis
-
-            # Deploy Flask ConfigMap & Secrets
-            echo "Deploying Flask ConfigMap & Secrets..."
-            kubectl apply -f /home/ubuntu/k8s-manifests/flask/configmap.yaml -n app
-            kubectl apply -f /home/ubuntu/k8s-manifests/flask/secrets.yaml -n app
-
-            # Deploy Flask Deployment & Service
-            echo "Deploying Flask Deployment & Service..."
-            kubectl apply -f /home/ubuntu/k8s-manifests/flask/deployment.yaml -n app
-            kubectl apply -f /home/ubuntu/k8s-manifests/flask/service.yaml -n app
-
-            # Wait for pods to be ready
-            echo "Waiting for pods to be ready..."
-            kubectl wait --for=condition=ready pod -l app=flask-app -n app --timeout=120s
-            kubectl wait --for=condition=ready pod -l app=postgres -n db --timeout=120s
-            kubectl wait --for=condition=ready pod -l app=redis -n redis --timeout=120s
-
-            # Initialize Postgres database
-            echo "Initializing Postgres database..."
-            PG_POD=$(kubectl get pod -l app=postgres -n db -o jsonpath='{.items[0].metadata.name}')
-            kubectl exec -it $PG_POD -n db -- psql -U postgres -d mydb -c "CREATE TABLE IF NOT EXISTS users (ID INT PRIMARY KEY NOT NULL, NAME TEXT NOT NULL);"
-            kubectl exec -it $PG_POD -n db -- psql -U postgres -d mydb -c "INSERT INTO users VALUES (1, '3324_1') ON CONFLICT DO NOTHING;"
-
-            # Final status
-            echo "Deployment finished!"
-            kubectl get pods -n app -o wide
-            kubectl get svc -n app -o wide
+          #     # Wait for pods to be ready
+          # echo "Waiting for pods to be ready..."
+          # kubectl wait --for=condition=ready pod -l app=flask-app -n app --timeout=120s
+          # kubectl wait --for=condition=ready pod -l app=postgres -n db --timeout=120s
+          # kubectl wait --for=condition=ready pod -l app=redis -n redis --timeout=120s
+          #
+          # # Initialize Postgres database
+          # echo "Initializing Postgres database..."
+          # PG_POD=$(kubectl get pod -l app=postgres -n db -o jsonpath='{.items[0].metadata.name}')
+          # kubectl exec -it $PG_POD -n db -- psql -U postgres -d mydb -c "CREATE TABLE IF NOT EXISTS users (ID INT PRIMARY KEY NOT NULL, NAME TEXT NOT NULL);"
+          # kubectl exec -it $PG_POD -n db -- psql -U postgres -d mydb -c "INSERT INTO users VALUES (1, '3324_1') ON CONFLICT DO NOTHING;"
+          #
+          # # Final status
+          # echo "Deployment finished!"
+            # kubectl get pods -n app -o wide
+            # kubectl get svc -n app -o wide
