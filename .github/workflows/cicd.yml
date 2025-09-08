@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout your repo
+      # 1️⃣ Checkout repo
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -26,29 +26,33 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
+
       # 4️⃣ Push both tags to Docker Hub
       - name: Push Docker image
         run: |
           docker push $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
+
+      # 5️⃣ Copy Kubernetes manifests to EC2
       - name: Copy Kubernetes manifests to EC2
         uses: appleboy/scp-action@v0.1.4
         with:
-          host: 44.208.21.230
+          host: 3.89.36.101
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "deployment.yaml,service.yaml"
-          target: "/home/ubuntu/"
+          source: "*.yaml"
+          target: "/home/ubuntu/manifests"
 
-      # 5️⃣ Deploy to your EC2 K3s cluster via SSH
+      # 6️⃣ Deploy to your EC2 K3s cluster via SSH
       - name: Deploy to K3s on EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
-          host: 44.208.21.230
+          host: 3.89.36.101
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             export KUBECONFIG=/home/ubuntu/.kube/config
-            echo "Updating Deployment with new image..."
-            kubectl apply -f deployment.yaml
-            kubectl apply -f service.yaml
+            echo "Applying all manifests with namespaces..."
+            kubectl apply -f /home/ubuntu/manifests/ --recursive
+            echo "Updating Flask app image..."
+            kubectl set image deployment/flask-app flask-app=$IMAGE:${{ github.sha }} -n app
