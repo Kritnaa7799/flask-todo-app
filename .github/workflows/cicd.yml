@@ -41,7 +41,7 @@ jobs:
           host: 3.89.36.101
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "k8s-manifests/**"
+          source: "*.yaml"
           target: "/home/ubuntu/k8s-manifests"
 
       # 6️⃣ Deploy services on EC2 via SSH
