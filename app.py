@@ -1,57 +1,49 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
+import psycopg2
+import redis
+import os
+
+db_host = os.getenv("PGDB_HOST")
+db_user = os.getenv("PGDB_USER")
+db_password = os.getenv("PGDB_PASSWORD")
+db_name = os.getenv("PGDB_NAME")
+redis_host = os.getenv("REDIS_HOST")
 
 app = Flask(__name__)
 
-# In-memory store for tasks
-tasks = [
-    {"id": 1, "title": "Learn Docker", "done": False},
-    {"id": 2, "title": "Build CI/CD Pipeline", "done": False}
-]
+# Connect to Redis
+cache = redis.Redis(host=redis_host, port=6379)
 
-@app.route("/")
-def home():
-    return jsonify({"message": "Welcome to Flask TODO API 🚀"})
+# Connect to PostgreSQL
+def get_db_connection():
+    conn = psycopg2.connect(host=db_host,
+                            database=db_name,
+                            user=db_user,
+                            password=db_password)
+    return conn
 
-@app.route("/health")
-def health():
-    return jsonify({"status": "UP"}), 200
+@app.route('/')
+def hello():
+    return "Hello, Docker Multi-Container!"
 
-@app.route("/tasks", methods=["GET"])
-def get_tasks():
-    return jsonify(tasks)
+@app.route('/users')
+def get_users():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users;")
+    users = cur.fetchall()
+    cur.close()
+    conn.close()
 
-@app.route("/tasks", methods=["POST"])
-def create_task():
-    data = request.get_json()
-    if not data or "title" not in data:
-        return jsonify({"error": "Title is required"}), 400
-    
-    new_task = {
-        "id": len(tasks) + 1,
-        "title": data["title"],
-        "done": False
-    }
-    tasks.append(new_task)
-    return jsonify(new_task), 201
+    return jsonify(users)
 
-@app.route("/tasks/<int:task_id>", methods=["PUT"])
-def update_task(task_id):
-    task = next((t for t in tasks if t["id"] == task_id), None)
-    if not task:
-        return jsonify({"error": "Task not found"}), 404
-    
-    data = request.get_json()
-    task["title"] = data.get("title", task["title"])
-    task["done"] = data.get("done", task["done"])
-    return jsonify(task)
+@app.route('/cache')
+def cache_example():
+    if cache.get('key'):
+        return f"Cache Hit: {cache.get('key')}"
+    else:
+        cache.set('key', 'Hello from Redis Cache!')
+        return "Cache Miss: Key Set"
 
-@app.route("/tasks/<int:task_id>", methods=["DELETE"])
-def delete_task(task_id):
-    global tasks
-    tasks = [t for t in tasks if t["id"] != task_id]
-    return jsonify({"message": f"Task {task_id} deleted"}), 200
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
-
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
