@@ -35,14 +35,14 @@ jobs:
           docker push $IMAGE:latest
 
       # 5️⃣ Copy Kubernetes manifests to EC2
-      # - name: Copy K8s manifests
-      # uses: appleboy/scp-action@v0.1.4
-      # with:
-      #   host: 3.89.36.101
-      #   username: ubuntu
-      #   key: ${{ secrets.EC2_SSH_KEY }}
-      #   source: "*.yaml"
-      #   target: "/home/ubuntu/k8s-manifests"
+      - name: Copy K8s manifests
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: 3.89.36.101
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "flask/*.yaml"
+          target: "/home/ubuntu/k8s-manifests"
 
       # 6️⃣ Deploy services on EC2 via SSH
       #  - name: Deploy to K3s on EC2

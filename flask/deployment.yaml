@@ -16,6 +16,7 @@ spec:
       containers:
       - name: flask-app
         image: kishna/flask-app:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5000
         env:
